@@ -37,6 +37,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(11,13,20,.85);backdrop-f
 .card{position:relative;border-radius:var(--rad);overflow:hidden;background:var(--card);cursor:pointer;aspect-ratio:1/1;transition:transform .18s,box-shadow .18s;border:1px solid #20263a}
 .card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 12px 30px rgba(124,92,255,.25);border-color:var(--acc)}
 .card img{width:100%;height:100%;object-fit:cover;display:block}
+.card .noimg{width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:700;font-size:.92rem;background:linear-gradient(135deg,#1e2334,#2b1e4d);line-height:1.3}
 .card .t{position:absolute;inset:auto 0 0 0;padding:26px 10px 10px;background:linear-gradient(transparent,rgba(5,6,10,.92));font-size:.85rem;font-weight:600;opacity:0;transition:opacity .18s}
 .card:hover .t{opacity:1}
 .card .cat{position:absolute;top:8px;left:8px;background:rgba(10,12,18,.75);backdrop-filter:blur(4px);padding:3px 9px;border-radius:99px;font-size:.66rem;color:var(--acc2);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
@@ -97,7 +98,7 @@ footer a{color:var(--acc2)}
 <footer>
   <div class="wrap">
     <strong style="color:var(--txt)">⚡ ZenPlay</strong> — a free browser-games arcade.<br>
-    Games are provided and licensed via the <a href="https://partners.gamepix.com" rel="noopener" target="_blank">GamePix</a> publisher program. All games © their respective developers. ZenPlay is not affiliated with GamePix.
+    Games are provided and licensed via the <a href="https://partners.gamepix.com" rel="noopener" target="_blank">GamePix</a> publisher program and partner catalogs. All games © their respective developers. ZenPlay is not affiliated with GamePix.
   </div>
 </footer>
 
@@ -111,34 +112,77 @@ const ADSENSE_CLIENT = "";       // ⬅ Optional: "ca-pub-XXXXXXXXXXXXXXXX" once
 let ALL = [], shown = 0, activeCat = "All", query = "";
 const PAGE_SIZE = 60;
 const grid = document.getElementById("grid");
-const feedUrl = p => `https://feeds.gamepix.com/v2/json?sid=${SID}&pagination=96&page=${p}&order=q`;
+
+const gpFeed = p => `https://feeds.gamepix.com/v2/json?sid=${SID}&pagination=96&page=${p}&order=quality`;
+const proxy  = u => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`;
+
+async function getJSON(u){
+  try{
+    const r = await fetch(u, {mode:"cors"});
+    return r.ok ? await r.json() : null;
+  }catch(e){ return null; }
+}
+
+function addGamePix(j, seen){
+  const items = (j && (j.items || j.data)) || [];
+  let n = 0;
+  items.forEach(g=>{
+    const slug = g.namespace || g.id;
+    if(!slug || seen.has(slug)) return;
+    seen.add(slug); n++;
+    ALL.push({
+      slug: String(slug),
+      title: g.title || "Game",
+      cat: String(g.category || "arcade").toLowerCase(),
+      img: g.image || g.banner_image || "",
+      embed: `https://play.gamepix.com/${slug}/embed?sid=${SID}`
+    });
+  });
+  return n;
+}
+
+async function loadGamePix(useProxy){
+  const seen = new Set(ALL.map(g=>g.slug));
+  const reqs = [];
+  for(let p=1;p<=PAGES_TO_LOAD;p++){
+    const u = gpFeed(p);
+    reqs.push(getJSON(useProxy ? proxy(u) : u));
+  }
+  const res = await Promise.all(reqs);
+  let n = 0;
+  res.forEach(j=>{ n += addGamePix(j, seen); });
+  return n;
+}
+
+async function loadGameZipper(){
+  const u = "https://gamezipper.com/api/games.json";
+  const j = await getJSON(u) || await getJSON(proxy(u));
+  const arr = Array.isArray(j) ? j : ((j && (j.games || j.items)) || []);
+  const seen = new Set(ALL.map(g=>g.slug));
+  let n = 0;
+  arr.forEach(g=>{
+    const slug = g.slug || g.id;
+    if(!slug || seen.has(slug)) return;
+    seen.add(slug); n++;
+    ALL.push({
+      slug: String(slug),
+      title: g.name || g.title || "Game",
+      cat: String(g.category || "arcade").toLowerCase(),
+      img: g.image || g.thumbnail || g.thumb || "",
+      embed: g.embed_url || g.embed || `https://gamezipper.com/${slug}/?utm_source=embed`
+    });
+  });
+  return n;
+}
 
 async function boot(){
-  try{
-    const reqs = [];
-    for(let p=1;p<=PAGES_TO_LOAD;p++) reqs.push(fetch(feedUrl(p)).then(r=>r.ok?r.json():null).catch(()=>null));
-    const res = await Promise.all(reqs);
-    const seen = new Set();
-    res.forEach(j=>{
-      const items = (j && (j.items||j.data)) || [];
-      items.forEach(g=>{
-        const slug = g.namespace || g.id;
-        if(!slug || seen.has(slug)) return;
-        seen.add(slug);
-        ALL.push({
-          slug,
-          title: g.title || "Game",
-          cat: (g.category || "arcade").toLowerCase(),
-          img: g.image || g.banner_image || g.thumbnailUrl100 || "",
-          desc: g.description || ""
-        });
-      });
-    });
-  }catch(e){ /* feed unreachable */ }
+  await loadGamePix(false);            // 1) GamePix feed, direct
+  if(!ALL.length) await loadGamePix(true);   // 2) GamePix feed via relay (CORS-blocked networks)
+  if(!ALL.length) await loadGameZipper();    // 3) backup catalog
   document.getElementById("loading").style.display = "none";
   if(!ALL.length){
     document.getElementById("empty").style.display = "block";
-    document.getElementById("empty").textContent = "Couldn't load the games feed — please refresh in a moment.";
+    document.getElementById("empty").innerHTML = "Couldn't load the games catalog — <a href='javascript:location.reload()' style='color:var(--acc2)'>tap to retry</a>.";
     return;
   }
   buildChips();
@@ -183,7 +227,10 @@ function render(reset){
     const a = document.createElement("a");
     a.className = "card";
     a.href = "#g/"+g.slug;
-    a.innerHTML = `<img loading="lazy" src="${g.img}" alt="${esc(g.title)}"><span class="cat">${esc(g.cat)}</span><span class="t">${esc(g.title)}</span>`;
+    const art = g.img
+      ? `<img loading="lazy" src="${esc(g.img)}" alt="${esc(g.title)}" onerror="this.outerHTML='<div class=&quot;noimg&quot;>🎮<br>'+this.alt+'</div>'">`
+      : `<div class="noimg">🎮<br>${esc(g.title)}</div>`;
+    a.innerHTML = `${art}<span class="cat">${esc(g.cat)}</span><span class="t">${esc(g.title)}</span>`;
     grid.appendChild(a);
   });
   shown += next.length;
@@ -202,7 +249,7 @@ document.getElementById("q").addEventListener("input", e=>{
 /* ---------- player ---------- */
 function openGame(g){
   document.getElementById("ptitle").textContent = g.title;
-  document.getElementById("pframe").src = `https://play.gamepix.com/${g.slug}/embed?sid=${SID}`;
+  document.getElementById("pframe").src = g.embed;
   document.getElementById("player").classList.add("open");
   document.title = g.title + " — ZenPlay";
   document.body.style.overflow = "hidden";
@@ -222,7 +269,7 @@ function goFull(){
 }
 function openFromHash(){
   if(location.hash.startsWith("#g/")){
-    const slug = location.hash.slice(3);
+    const slug = decodeURIComponent(location.hash.slice(3));
     const g = ALL.find(x=>x.slug===slug);
     if(g) openGame(g);
   } else closeGame();
