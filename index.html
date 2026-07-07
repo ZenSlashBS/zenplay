@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZenPlay — Play 300+ Free Online Games</title>
+<meta name="description" content="ZenPlay is a free browser arcade with 300+ HTML5 games: action, puzzle, racing, sports, .io and 2-player games. No downloads, no sign-up — just play.">
+<meta property="og:title" content="ZenPlay — Free Online Games">
+<meta property="og:description" content="300+ free browser games. No downloads, no sign-up.">
+<meta property="og:type" content="website">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🎮</text></svg>">
+<style>
+:root{--bg:#0b0d14;--bg2:#12151f;--card:#171b28;--card2:#1e2334;--txt:#eef1f8;--mut:#8b93a7;--acc:#7c5cff;--acc2:#00d4ff;--rad:14px}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+header{position:sticky;top:0;z-index:50;background:rgba(11,13,20,.85);backdrop-filter:blur(12px);border-bottom:1px solid #222738}
+.wrap{max-width:1280px;margin:0 auto;padding:0 16px}
+.nav{display:flex;align-items:center;gap:14px;height:62px}
+.logo{font-size:1.35rem;font-weight:800;letter-spacing:-.5px;white-space:nowrap}
+.logo span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.search{flex:1;max-width:520px;position:relative}
+.search input{width:100%;padding:10px 16px 10px 40px;border-radius:99px;border:1px solid #2a3046;background:var(--bg2);color:var(--txt);font-size:.95rem;outline:none;transition:border .2s}
+.search input:focus{border-color:var(--acc)}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;fill:var(--mut)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:7px 16px;border-radius:99px;background:var(--card);border:1px solid #262c40;color:var(--mut);font-size:.85rem;cursor:pointer;white-space:nowrap;transition:.2s}
+.chip:hover{color:var(--txt);border-color:var(--acc)}
+.chip.on{background:linear-gradient(90deg,var(--acc),#5a3fd4);color:#fff;border-color:transparent}
+.hero{padding:34px 0 10px}
+.hero h1{font-size:clamp(1.5rem,4vw,2.3rem);font-weight:800;letter-spacing:-.5px}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--mut);margin-top:6px;font-size:.98rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;padding:18px 0 40px}
+.card{position:relative;border-radius:var(--rad);overflow:hidden;background:var(--card);cursor:pointer;aspect-ratio:1/1;transition:transform .18s,box-shadow .18s;border:1px solid #20263a}
+.card:hover{transform:translateY(-4px) scale(1.02);box-shadow:0 12px 30px rgba(124,92,255,.25);border-color:var(--acc)}
+.card img{width:100%;height:100%;object-fit:cover;display:block}
+.card .t{position:absolute;inset:auto 0 0 0;padding:26px 10px 10px;background:linear-gradient(transparent,rgba(5,6,10,.92));font-size:.85rem;font-weight:600;opacity:0;transition:opacity .18s}
+.card:hover .t{opacity:1}
+.card .cat{position:absolute;top:8px;left:8px;background:rgba(10,12,18,.75);backdrop-filter:blur(4px);padding:3px 9px;border-radius:99px;font-size:.66rem;color:var(--acc2);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+.more{display:block;margin:0 auto 60px;padding:12px 34px;border-radius:99px;border:1px solid var(--acc);background:transparent;color:var(--txt);font-size:.95rem;font-weight:600;cursor:pointer;transition:.2s}
+.more:hover{background:var(--acc)}
+.player{position:fixed;inset:0;z-index:100;background:#05060a;display:none;flex-direction:column}
+.player.open{display:flex}
+.pbar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--bg2);border-bottom:1px solid #222738}
+.pbar h2{font-size:1rem;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbtn{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:99px;border:1px solid #2a3046;background:var(--card);color:var(--txt);font-size:.85rem;cursor:pointer;transition:.2s}
+.pbtn:hover{border-color:var(--acc)}
+.pframe{flex:1;position:relative}
+.pframe iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.loading{display:flex;justify-content:center;padding:60px 0}
+.spin{width:42px;height:42px;border:4px solid #262c40;border-top-color:var(--acc);border-radius:50%;animation:sp 1s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+footer{border-top:1px solid #1c2133;padding:28px 0;color:var(--mut);font-size:.83rem;line-height:1.7}
+footer a{color:var(--acc2)}
+.empty{text-align:center;color:var(--mut);padding:60px 0}
+@media(max-width:560px){.grid{grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}.logo{font-size:1.1rem}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="nav">
+      <a class="logo" href="#" onclick="closeGame();setCat('All');return false">⚡ Zen<span>Play</span></a>
+      <div class="search">
+        <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7 14 5 12 5 9.5S7 5 9.5 5 14 7 14 9.5 12 14 9.5 14z"/></svg>
+        <input id="q" type="search" placeholder="Search 300+ games…" autocomplete="off">
+      </div>
+    </div>
+    <div class="chips" id="chips"></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="hero" id="hero">
+    <h1>Play <em>free games</em> instantly 🎮</h1>
+    <p>No downloads. No sign-up. Just tap and play — on phone or PC.</p>
+  </div>
+  <div class="loading" id="loading"><div class="spin"></div></div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" style="display:none">No games found — try another search 🔍</div>
+  <button class="more" id="more" style="display:none" onclick="showMore()">Load more games</button>
+</main>
+
+<div class="player" id="player">
+  <div class="pbar">
+    <button class="pbtn" onclick="closeGame()">← Back</button>
+    <h2 id="ptitle">Game</h2>
+    <button class="pbtn" onclick="goFull()">⛶ Fullscreen</button>
+  </div>
+  <div class="pframe"><iframe id="pframe" allow="gamepad *; fullscreen *; autoplay" allowfullscreen scrolling="no"></iframe></div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <strong style="color:var(--txt)">⚡ ZenPlay</strong> — a free browser-games arcade.<br>
+    Games are provided and licensed via the <a href="https://partners.gamepix.com" rel="noopener" target="_blank">GamePix</a> publisher program. All games © their respective developers. ZenPlay is not affiliated with GamePix.
+  </div>
+</footer>
+
+<script>
+/* ================= CONFIG ================= */
+const SID = "1";                 // ⬅ Replace with YOUR GamePix Site ID (partners.gamepix.com) to earn revenue share
+const PAGES_TO_LOAD = 4;         // 4 x 96 = up to 384 games
+const ADSENSE_CLIENT = "";       // ⬅ Optional: "ca-pub-XXXXXXXXXXXXXXXX" once AdSense approves you
+/* ========================================== */
+
+let ALL = [], shown = 0, activeCat = "All", query = "";
+const PAGE_SIZE = 60;
+const grid = document.getElementById("grid");
+const feedUrl = p => `https://feeds.gamepix.com/v2/json?sid=${SID}&pagination=96&page=${p}&order=q`;
+
+async function boot(){
+  try{
+    const reqs = [];
+    for(let p=1;p<=PAGES_TO_LOAD;p++) reqs.push(fetch(feedUrl(p)).then(r=>r.ok?r.json():null).catch(()=>null));
+    const res = await Promise.all(reqs);
+    const seen = new Set();
+    res.forEach(j=>{
+      const items = (j && (j.items||j.data)) || [];
+      items.forEach(g=>{
+        const slug = g.namespace || g.id;
+        if(!slug || seen.has(slug)) return;
+        seen.add(slug);
+        ALL.push({
+          slug,
+          title: g.title || "Game",
+          cat: (g.category || "arcade").toLowerCase(),
+          img: g.image || g.banner_image || g.thumbnailUrl100 || "",
+          desc: g.description || ""
+        });
+      });
+    });
+  }catch(e){ /* feed unreachable */ }
+  document.getElementById("loading").style.display = "none";
+  if(!ALL.length){
+    document.getElementById("empty").style.display = "block";
+    document.getElementById("empty").textContent = "Couldn't load the games feed — please refresh in a moment.";
+    return;
+  }
+  buildChips();
+  render(true);
+  openFromHash();
+}
+
+function buildChips(){
+  const counts = {};
+  ALL.forEach(g=>counts[g.cat]=(counts[g.cat]||0)+1);
+  const cats = Object.keys(counts).sort((a,b)=>counts[b]-counts[a]);
+  const el = document.getElementById("chips");
+  el.innerHTML = "";
+  ["All",...cats].forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "chip" + (c===activeCat?" on":"");
+    b.textContent = c==="All" ? "🔥 All" : c[0].toUpperCase()+c.slice(1);
+    b.onclick = ()=>setCat(c);
+    el.appendChild(b);
+  });
+}
+
+function setCat(c){
+  activeCat = c; query = ""; document.getElementById("q").value = "";
+  buildChips(); render(true);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+function filtered(){
+  return ALL.filter(g=>
+    (activeCat==="All" || g.cat===activeCat) &&
+    (!query || g.title.toLowerCase().includes(query) || g.cat.includes(query))
+  );
+}
+
+function render(reset){
+  if(reset){ grid.innerHTML=""; shown=0; }
+  const list = filtered();
+  document.getElementById("empty").style.display = list.length ? "none" : "block";
+  const next = list.slice(shown, shown+PAGE_SIZE);
+  next.forEach(g=>{
+    const a = document.createElement("a");
+    a.className = "card";
+    a.href = "#g/"+g.slug;
+    a.innerHTML = `<img loading="lazy" src="${g.img}" alt="${esc(g.title)}"><span class="cat">${esc(g.cat)}</span><span class="t">${esc(g.title)}</span>`;
+    grid.appendChild(a);
+  });
+  shown += next.length;
+  document.getElementById("more").style.display = shown < list.length ? "block" : "none";
+}
+
+function showMore(){ render(false); }
+
+function esc(s){ return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m])); }
+
+document.getElementById("q").addEventListener("input", e=>{
+  query = e.target.value.trim().toLowerCase();
+  render(true);
+});
+
+/* ---------- player ---------- */
+function openGame(g){
+  document.getElementById("ptitle").textContent = g.title;
+  document.getElementById("pframe").src = `https://play.gamepix.com/${g.slug}/embed?sid=${SID}`;
+  document.getElementById("player").classList.add("open");
+  document.title = g.title + " — ZenPlay";
+  document.body.style.overflow = "hidden";
+}
+function closeGame(){
+  const p = document.getElementById("player");
+  if(!p.classList.contains("open")) return;
+  p.classList.remove("open");
+  document.getElementById("pframe").src = "about:blank";
+  document.title = "ZenPlay — Play 300+ Free Online Games";
+  document.body.style.overflow = "";
+  if(location.hash.startsWith("#g/")) history.pushState("", "", location.pathname);
+}
+function goFull(){
+  const f = document.getElementById("pframe");
+  (f.requestFullscreen || f.webkitRequestFullscreen || function(){}).call(f);
+}
+function openFromHash(){
+  if(location.hash.startsWith("#g/")){
+    const slug = location.hash.slice(3);
+    const g = ALL.find(x=>x.slug===slug);
+    if(g) openGame(g);
+  } else closeGame();
+}
+window.addEventListener("hashchange", openFromHash);
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeGame(); });
+
+/* ---------- optional AdSense ---------- */
+if(ADSENSE_CLIENT){
+  const s = document.createElement("script");
+  s.async = true;
+  s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" + ADSENSE_CLIENT;
+  s.crossOrigin = "anonymous";
+  document.head.appendChild(s);
+}
+
+boot();
+</script>
+</body>
+</html>
